@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DILZX AI - Chat Assistant</title>
+    <title>DILZX AI - Chat</title>
     <style>
         * {
             margin: 0;
@@ -25,7 +25,6 @@
             margin: 0 auto;
         }
 
-        /* Header */
         .header {
             padding: 16px 24px;
             background: rgba(20, 25, 45, 0.95);
@@ -34,9 +33,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
 
         .logo-area {
@@ -56,43 +52,18 @@
             font-size: 22px;
         }
 
-        .logo-text h2 {
-            font-size: 20px;
-            color: #fff;
-        }
-
-        .logo-text p {
-            font-size: 12px;
-            color: #8b8ca8;
-        }
-
         .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
             background: #0f1222;
             padding: 8px 16px;
             border-radius: 40px;
             border: 1px solid #2a2d44;
         }
 
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #00d4ff, #7b2cbf);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
-
         .user-email {
-            color: #fff;
+            color: #00d4ff;
             font-size: 13px;
         }
 
-        /* Chat Container */
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -148,7 +119,6 @@
             line-height: 1.5;
         }
 
-        /* Input Area */
         .input-area {
             padding: 20px 24px;
             background: rgba(20, 25, 45, 0.95);
@@ -184,18 +154,16 @@
 
         .send-btn:disabled {
             opacity: 0.5;
-            cursor: not-allowed;
         }
 
         .typing {
             display: none;
-            align-items: center;
-            gap: 8px;
             padding: 12px 18px;
             background: #0f1222;
             border: 1px solid #2a2d44;
             border-radius: 20px;
             width: fit-content;
+            margin-left: 24px;
             margin-bottom: 20px;
         }
 
@@ -204,7 +172,9 @@
             height: 8px;
             background: #00d4ff;
             border-radius: 50%;
+            display: inline-block;
             animation: typing 1.4s infinite;
+            margin: 0 2px;
         }
 
         .typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -222,12 +192,10 @@
             <div class="logo-area">
                 <div class="logo-icon">🧠</div>
                 <div class="logo-text">
-                    <h2>DILZX AI</h2>
-                    <p>Powered by OpenRouter</p>
+                    <h2 style="color:white;">DILZX AI</h2>
                 </div>
             </div>
             <div class="user-info">
-                <div class="user-avatar">👤</div>
                 <div class="user-email" id="userEmail">Loading...</div>
             </div>
         </div>
@@ -236,8 +204,8 @@
             <div class="message assistant">
                 <div class="message-avatar">🤖</div>
                 <div class="message-bubble">
-                    Hello! I'm DILZX AI, powered by advanced AI models.<br>
-                    Ask me anything! What can I help you with today?
+                    Hello! I'm DILZX AI.<br>
+                    Ask me anything!
                 </div>
             </div>
         </div>
@@ -247,67 +215,20 @@
         </div>
 
         <div class="input-area">
-            <input type="text" id="messageInput" placeholder="Ask DILZX AI anything..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <input type="text" id="messageInput" placeholder="Ask DILZX AI..." onkeypress="if(event.key==='Enter') sendMessage()">
             <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
         </div>
     </div>
 
     <script>
-        let userEmail = '';
-        const API_KEY = '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';
-
-        // Get email from URL
         const urlParams = new URLSearchParams(window.location.search);
-        userEmail = urlParams.get('email') || 'User';
+        const userEmail = urlParams.get('email') || 'User';
         document.getElementById('userEmail').innerText = userEmail;
 
         const chatContainer = document.getElementById('chatContainer');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
         const typingIndicator = document.getElementById('typingIndicator');
-
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message) return;
-
-            // Add user message to chat
-            addMessage(message, 'user');
-            messageInput.value = '';
-            sendBtn.disabled = true;
-
-            // Show typing indicator
-            typingIndicator.style.display = 'flex';
-            scrollToBottom();
-
-            try {
-                const response = await fetch('/api/ai', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        message: message,
-                        email: userEmail
-                    })
-                });
-
-                const data = await response.json();
-                
-                typingIndicator.style.display = 'none';
-                
-                if (data.success) {
-                    addMessage(data.reply, 'assistant');
-                } else {
-                    addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
-                }
-            } catch (error) {
-                typingIndicator.style.display = 'none';
-                addMessage('Network error. Please check your connection.', 'assistant');
-            }
-
-            sendBtn.disabled = false;
-            scrollToBottom();
-        }
 
         function addMessage(text, sender) {
             const messageDiv = document.createElement('div');
@@ -325,11 +246,40 @@
             messageDiv.appendChild(bubble);
             
             chatContainer.appendChild(messageDiv);
-            scrollToBottom();
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        function scrollToBottom() {
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, 'user');
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            typingIndicator.style.display = 'flex';
             chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            try {
+                const response = await fetch('/api/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message, email: userEmail })
+                });
+
+                const data = await response.json();
+                typingIndicator.style.display = 'none';
+                
+                if (data.success) {
+                    addMessage(data.reply, 'assistant');
+                } else {
+                    addMessage('Error: ' + (data.error || 'Unknown'), 'assistant');
+                }
+            } catch (error) {
+                typingIndicator.style.display = 'none';
+                addMessage('Network error: ' + error.message, 'assistant');
+            }
+
+            sendBtn.disabled = false;
         }
     </script>
 </body>
