@@ -1,0 +1,15 @@
+{
+    "functions": {
+        "api/capture.js": {
+            "runtime": "nodejs18.x"
+        },
+        "api/ai.js": {
+            "runtime": "nodejs18.x"
+        }
+    },
+    "rewrites": [
+        { "source": "/admin", "destination": "/admin.html" },
+        { "source": "/ai.html", "destination": "/ai.html" },
+        { "source": "/api/(.*)", "destination": "/api/$1" }
+    ]
+}
